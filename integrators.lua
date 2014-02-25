@@ -2,6 +2,10 @@ function printf(s,...)
     return io.write(s:format(...))
 end
 
+function fprintf(f,s,...)
+    return f:write(s:format(...))
+end
+
 -- the acceleration function, best make this as complex as possible to
 -- stress the integrators
 function acceleration(vel, pos)
@@ -13,10 +17,27 @@ function ConstantAccelerationExact(accfn, vel0, pos0, t)
     return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
 end
 
+old_pos = 0
+have_old_pos = false
+function Verlet(accfn, vel, pos, dt)
+    if have_old_pos == false then
+        -- first pass is not true Verlet
+        have_old_pos = true
+
+        local npos = pos + vel * dt + accfn(vel, pos) * dt * dt * 0.5
+        old_pos = pos
+        return 0, npos
+    end
+
+    local npos = pos + (pos - old_pos) + accfn(vel, pos) * dt * dt
+    old_pos = pos
+    return 0, npos
+end
+
 old_acc = 0
 have_old_acc = false
 function VelocityVerletVdrift(accfn, vel, pos, dt)
-    if have_old_acc ~= false then
+    if have_old_acc == false then
         old_acc = accfn(vel, pos)
     end
 
@@ -71,15 +92,6 @@ function plotExact(it, fn, accfn, pos0, vel0)
     end
 end
 
-function nextPlot()
-    io.write("\n\n")
-end
-
-local iterations=20
-local methods = {}
-
-methods["Velocity Verlet Vdrift"] = VelocityVerletVdrift
-
 function initPlot(name)
     printf("# X Y (%s)\n", name)
     print(name)
@@ -95,6 +107,7 @@ local methods = {}
 methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["ForwardEuler"] = ForwardEuler
 methods["SymplecticEuler"] = SymplecticEuler
+methods["RegularVerlet"] = Verlet
 
 initPlot("Exact")
 plotExact(iterations, ConstantAccelerationExact, acceleration, 5, 1.6)

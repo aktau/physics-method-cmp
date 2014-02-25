@@ -12,7 +12,7 @@ default: comparison.html
 $(SOURCE_DATA): integrators.lua
 	@echo "rebuilding data..."
 	@$(determine_lua); \
-	$$lua integrators.lua > "$@"
+	$$lua integrators.lua 2>&1 > "$@"
 
 comparison.html: $(SOURCE_DATA)
 	./plot.sh "$<"
