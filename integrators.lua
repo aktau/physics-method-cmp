@@ -17,21 +17,49 @@ function ConstantAccelerationExact(accfn, vel0, pos0, t)
     return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
 end
 
-old_pos = 0
-have_old_pos = false
-function Verlet(accfn, vel, pos, dt)
-    if have_old_pos == false then
-        -- first pass is not true Verlet
-        have_old_pos = true
+do
+    local old_pos = 0
+    local have_old_pos = false
 
-        local npos = pos + vel * dt + accfn(vel, pos) * dt * dt * 0.5
+    function Verlet(accfn, vel, pos, dt)
+        if have_old_pos == false then
+            -- first pass is not true Verlet
+            have_old_pos = true
+
+            local npos = pos + vel * dt + accfn(vel, pos) * dt * dt * 0.5
+            old_pos = pos
+            return 0, npos
+        end
+
+        local npos = pos + (pos - old_pos) + accfn(vel, pos) * dt * dt
         old_pos = pos
         return 0, npos
     end
+end
 
-    local npos = pos + (pos - old_pos) + accfn(vel, pos) * dt * dt
-    old_pos = pos
-    return 0, npos
+do
+    local old_pos = 0
+    local old_dt = 0
+    local have_old_pos = false
+
+    -- based on
+    -- http://archive.gamedev.net/archive/reference/programming/features/verlet/default.html
+    function TimeCorrectedVerlet(accfn, vel, pos, dt)
+        if have_old_pos == false then
+            -- first pass is not true Verlet
+            have_old_pos = true
+
+            local npos = pos + vel * dt + accfn(vel, pos) * dt * dt * 0.5
+            old_pos = pos
+            old_dt = dt
+            return 0, npos
+        end
+
+        local npos = pos + (pos - old_pos) * (dt / old_dt) + accfn(vel, pos) * dt * dt
+        old_pos = pos
+        old_dt = dt
+        return 0, npos
+    end
 end
 
 old_acc = 0
@@ -109,6 +137,7 @@ local iterations=20
 local methods = {}
 
 methods["VelocityVerletVdrift"] = VelocityVerletVdrift
+methods["TimeCorrectedVerlet"] = TimeCorrectedVerlet
 methods["ForwardEuler"] = ForwardEuler
 methods["SymplecticEuler"] = SymplecticEuler
 methods["RegularVerlet"] = Verlet
