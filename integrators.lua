@@ -80,6 +80,11 @@ local methods = {}
 
 methods["Velocity Verlet Vdrift"] = VelocityVerletVdrift
 
+function initPlot(name)
+    printf("# X Y (%s)\n", name)
+    print(name)
+end
+
 function nextPlot()
     io.write("\n\n")
 end
@@ -91,13 +96,11 @@ methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["ForwardEuler"] = ForwardEuler
 methods["SymplecticEuler"] = SymplecticEuler
 
-printf("# X Y (exact)\n")
-print("Exact")
+initPlot("Exact")
 plotExact(iterations, ConstantAccelerationExact, acceleration, 5, 1.6)
 nextPlot()
 for name, fn in pairs(methods) do
-    printf("# X Y (%s)\n", name)
-    print(name)
+    initPlot(name)
     plotNumeric(iterations, fn, acceleration, 5, 1.6)
     nextPlot()
 end
