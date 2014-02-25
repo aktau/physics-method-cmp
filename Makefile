@@ -16,8 +16,11 @@ $(SOURCE_DATA): integrators.lua
 comparison.html: $(SOURCE_DATA)
 	./plot.sh "$<"
 
+open: comparison.html
+	open "$<"
+
 clean:
 	rm -f $(SOURCE_DATA) || true
 	rm -f comparison.html || true
 
-.PHONY: clean
+.PHONY: clean open
