@@ -9,9 +9,11 @@ set style line 2 lc rgb '#dd181f' lw 2 pt 7 ps 1.5   # --- red
 set style line 3 lc rgb '#339900' lw 2 pt 9 ps 1.5   # --- green
 set style line 4 lc rgb '#990066' lw 2 pt 11 ps 1.5   # --- magenta
 set style line 5 lc rgb '#FF6633' lw 2 pt 13 ps 1.5   # --- orange
+set style line 6 lc rgb '#262626' lw 2 pt 15 ps 1.5   # --- almost black
 
 plot file index 0 with linespoints ls 1, \
      file index 1 with linespoints ls 2, \
      file index 2 with linespoints ls 3, \
      file index 3 with linespoints ls 4, \
-     file index 4 with linespoints ls 5
+     file index 4 with linespoints ls 5, \
+     file index 5 with linespoints ls 6

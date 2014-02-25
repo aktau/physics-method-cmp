@@ -64,14 +64,18 @@ end
 
 function SymplecticEuler(accfn, vel, pos, dt)
     local acc = accfn(vel, pos)
-
-    -- forward euler step
-    local nvel = vel + acc * dt
-
-    -- backward euler step
-    local npos = pos + nvel * dt
-
+    local nvel = vel + acc * dt -- forward euler step
+    local npos = pos + nvel * dt -- backward euler step
     return nvel, npos
+end
+
+-- use a second-order method for approximating position
+-- should give the same accuracy as the Verlet family for
+-- when using constant acceleration
+function NaiveImprovedEuler(accfn, vel, pos, dt)
+    local acc = accfn(vel, pos)
+    local nvel = vel + acc * dt
+    return nvel, pos + (vel + nvel) * 0.5 * dt
 end
 
 function plotNumeric(it, integrator, accfn, pos, vel)
@@ -108,6 +112,7 @@ methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["ForwardEuler"] = ForwardEuler
 methods["SymplecticEuler"] = SymplecticEuler
 methods["RegularVerlet"] = Verlet
+methods["NaiveImprovedEuler"] = NaiveImprovedEuler
 
 initPlot("Exact")
 plotExact(iterations, ConstantAccelerationExact, acceleration, 5, 1.6)
