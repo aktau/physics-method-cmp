@@ -62,27 +62,29 @@ do
     end
 end
 
-old_acc = 0
-have_old_acc = false
-function VelocityVerletVdrift(accfn, vel, pos, dt)
-    if have_old_acc == false then
-        old_acc = accfn(vel, pos)
+do
+    local old_acc = 0
+    local have_old_acc = false
+    function VelocityVerletVdrift(accfn, vel, pos, dt)
+        if have_old_acc == false then
+            old_acc = accfn(vel, pos)
+        end
+
+        local npos = pos +  vel * dt + 0.5 * old_acc * dt * dt
+        local nvel = vel +  0.5 * old_acc * dt
+
+        -- calculate the acceleration at the end position and with the
+        -- half-integrated velocity
+        local acc = accfn(nvel, npos)
+
+        -- correct the velocity
+        nvel = nvel + 0.5 * acc * dt
+
+        old_acc = acc
+        have_old_acc = true
+
+        return nvel, npos
     end
-
-    local npos = pos +  vel * dt + 0.5 * old_acc * dt * dt
-    local nvel = vel +  0.5 * old_acc * dt
-
-    -- calculate the acceleration at the end position and with the
-    -- half-integrated velocity
-    local acc = accfn(nvel, npos)
-
-    -- correct the velocity
-    nvel = nvel + 0.5 * acc * dt
-
-    old_acc = acc
-    have_old_acc = true
-
-    return nvel, npos
 end
 
 function ForwardEuler(accfn, vel, pos, dt)
