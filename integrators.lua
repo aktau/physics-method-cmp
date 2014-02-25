@@ -1,8 +1,6 @@
-#!/usr/bin/env luajit
-
-printf = function(s,...)
+function printf(s,...)
     return io.write(s:format(...))
-end -- function
+end
 
 function acceleration(vel, pos)
     return -9.81
