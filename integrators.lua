@@ -2,20 +2,12 @@ function printf(s,...)
     return io.write(s:format(...))
 end
 
+-- the acceleration function, best make this as complex as possible to
+-- stress the integrators
 function acceleration(vel, pos)
     return -9.81
 end
 
--- if (!have_oldaccel)
---     oldaccel = system.GetAcceleration(state);
-
--- state.x += state.v*dt + 0.5*oldaccel*dt*dt;
--- state.v += 0.5*oldaccel*dt;
--- real a = system.GetAcceleration(state);
--- state.v += 0.5*a*dt;
-
--- oldaccel = a;
--- have_oldaccel = true;
 old_acc = 0
 have_old_acc = false
 function VelocityVerletVdrift(vel, pos, dt)
@@ -39,13 +31,24 @@ function VelocityVerletVdrift(vel, pos, dt)
     return nvel, npos
 end
 
+function ForwardEuler(vel, pos, dt)
+    local acc = acceleration(vel, pos)
+    return vel + acc * dt, pos + vel * dt
+end
+
 function plot(fn, it, pos, vel)
     print("# X Y")
     for i = 1,it do
         -- print(pos, vel)
         printf("%d %f\n", i, pos)
-        pos, vel = fn(pos, vel, 1/60)
+        pos, vel = fn(vel, pos, 1/60)
     end
 end
 
+function nextPlot()
+    io.write("\n\n")
+end
+
 plot(VelocityVerletVdrift, 5, 5, 1.6)
+nextPlot()
+plot(ForwardEuler, 5, 5, 1.6)

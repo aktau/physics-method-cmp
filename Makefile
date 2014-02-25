@@ -10,6 +10,7 @@ determine_lua = \
 default: comparison.html
 
 $(SOURCE_DATA): integrators.lua
+	@echo "rebuilding data..."
 	@$(determine_lua); \
 	$$lua integrators.lua > "$@"
 
