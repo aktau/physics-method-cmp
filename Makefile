@@ -1,4 +1,5 @@
 SOURCE_DATA=data.tmp
+SOURCE_META=meta.plt
 
 determine_lua = \
 		lua=; \
@@ -12,16 +13,22 @@ default: comparison.html
 $(SOURCE_DATA): integrators.lua
 	@echo "rebuilding data..."
 	@$(determine_lua); \
-	$$lua integrators.lua 2>&1 > "$@"
+	$$lua integrators.lua data 2>&1 > "$@"
 
-comparison.html: $(SOURCE_DATA)
-	./plot.sh "$<"
+$(SOURCE_META): integrators.lua
+	@echo "rebuilding meta..."
+	@$(determine_lua); \
+	$$lua integrators.lua meta 2>&1 > "$@"
+
+comparison.html: $(SOURCE_DATA) $(SOURCE_META)
+	./plot.sh $^
 
 open: comparison.html
 	open "$<"
 
 clean:
 	rm -f $(SOURCE_DATA) || true
+	rm -f $(SOURCE_META) || true
 	rm -f comparison.html || true
 
 .PHONY: clean open
