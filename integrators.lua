@@ -8,11 +8,16 @@ function acceleration(vel, pos)
     return -9.81
 end
 
+function ConstantAccelerationExact(accfn, vel0, pos0, t)
+    local acc0 = accfn()
+    return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
+end
+
 old_acc = 0
 have_old_acc = false
-function VelocityVerletVdrift(vel, pos, dt)
+function VelocityVerletVdrift(accfn, vel, pos, dt)
     if have_old_acc ~= false then
-        old_acc = acceleration(vel, pos)
+        old_acc = accfn(vel, pos)
     end
 
     local npos = pos +  vel * dt + 0.5 * old_acc * dt * dt
@@ -20,7 +25,7 @@ function VelocityVerletVdrift(vel, pos, dt)
 
     -- calculate the acceleration at the end position and with the
     -- half-integrated velocity
-    local acc = acceleration(nvel, npos)
+    local acc = accfn(nvel, npos)
 
     -- correct the velocity
     nvel = nvel + 0.5 * acc * dt
@@ -31,17 +36,38 @@ function VelocityVerletVdrift(vel, pos, dt)
     return nvel, npos
 end
 
-function ForwardEuler(vel, pos, dt)
-    local acc = acceleration(vel, pos)
+function ForwardEuler(accfn, vel, pos, dt)
+    local acc = accfn(vel, pos)
     return vel + acc * dt, pos + vel * dt
 end
 
-function plot(fn, it, pos, vel)
-    print("# X Y")
+function SymplecticEuler(accfn, vel, pos, dt)
+    local acc = accfn(vel, pos)
+
+    -- forward euler step
+    local nvel = vel + acc * dt
+
+    -- backward euler step
+    local npos = pos + nvel * dt
+
+    return nvel, npos
+end
+
+function plotNumeric(it, integrator, accfn, pos, vel)
     for i = 1,it do
-        -- print(pos, vel)
         printf("%d %f\n", i, pos)
-        pos, vel = fn(vel, pos, 1/60)
+        vel, pos = integrator(accfn, vel, pos, 1/60)
+    end
+end
+
+function plotExact(it, fn, accfn, pos0, vel0)
+    local vel = vel0
+    local pos = pos0
+    local t = 0
+    for i = 1,it do
+        printf("%d %f\n", i, pos)
+        t = t + 1/60
+        vel, pos = fn(accfn, vel0, pos0, t)
     end
 end
 
@@ -49,6 +75,29 @@ function nextPlot()
     io.write("\n\n")
 end
 
-plot(VelocityVerletVdrift, 5, 5, 1.6)
+local iterations=20
+local methods = {}
+
+methods["Velocity Verlet Vdrift"] = VelocityVerletVdrift
+
+function nextPlot()
+    io.write("\n\n")
+end
+
+local iterations=20
+local methods = {}
+
+methods["VelocityVerletVdrift"] = VelocityVerletVdrift
+methods["ForwardEuler"] = ForwardEuler
+methods["SymplecticEuler"] = SymplecticEuler
+
+printf("# X Y (exact)\n")
+print("Exact")
+plotExact(iterations, ConstantAccelerationExact, acceleration, 5, 1.6)
 nextPlot()
-plot(ForwardEuler, 5, 5, 1.6)
+for name, fn in pairs(methods) do
+    printf("# X Y (%s)\n", name)
+    print(name)
+    plotNumeric(iterations, fn, acceleration, 5, 1.6)
+    nextPlot()
+end
