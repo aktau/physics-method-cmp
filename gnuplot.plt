@@ -2,6 +2,8 @@ set title "Numerical integrator accuracy"
 
 set key autotitle columnhead
 
+set grid
+
 set style line 1 lc rgb '#0060ad' lw 2 pt 5 ps 1.5   # --- blue
 set style line 2 lc rgb '#dd181f' lw 2 pt 7 ps 1.5   # --- red
 set style line 3 lc rgb '#339900' lw 2 pt 9 ps 1.5   # --- green
