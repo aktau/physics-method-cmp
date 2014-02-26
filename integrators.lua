@@ -6,17 +6,44 @@ function fprintf(f,s,...)
     return f:write(s:format(...))
 end
 
+-- local versions of math functions
+local sin, cos = math.sin, math.cos
+
 --[[
 acceleration functions and exact solutions
 --]]
 
-function gravity(vel, pos)
-    return -9.81
+-- returns a function that only depends on position and velocity
+function gravity()
+    return function(vel, pos)
+        return -9.81
+    end
 end
 
+-- returns a function that only depends on absolute time
 function gravityExact(acc0, vel0, pos0)
     return function(t)
         return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
+    end
+end
+
+-- returns a function that only depends on position and velocity
+function spring(stiffness, mass)
+    return function(vel, pos)
+        return -(stiffness / mass) * pos
+    end
+end
+
+-- returns a function that only depends on absolute time
+function springExact(acc0, vel0, pos0)
+    local t0 = 0
+    local denom = (sin(t0) ^ 2) + cos(t0)
+    local A = (pos0 - vel0 * sin(t0)) / denom
+    local B = (pos0 * sin(t0) + vel0 * cos(t0)) / denom
+    -- print("initial conditions are A = ", A, "and B = ", B)
+    return function(t)
+        local sint, cost = sin(t), cos(t)
+        return -A * sint + B * cost, A * cost + B * sint
     end
 end
 
@@ -160,17 +187,10 @@ function plotNumeric(it, integrator, accfn, pos, vel)
     end
 end
 
--- function plotExact(it, fn, accfn, pos0, vel0)
---     local vel = vel0
---     local pos = pos0
 function plotExact(it, fn, accfn, pos0, vel0)
-    -- local t = 0
-    -- local vel = vel0
     for i = 1,it do
         local vel, pos = fn((i-1) * 1/60)
-        -- fprintf(io.stderr, "GRAVITY RETURN vel: %f, pos: %f at time %f", vel, pos, (i-1) * 1/60)
         printf("%d %f\n", i, pos)
-        -- t = t + 1/60
     end
 end
 
@@ -194,7 +214,6 @@ function Gp:new(o)
 end
 
 function Gp:line(...)
-    -- print(...)
     self.output:write(...)
     self.output:write("\n")
 end
@@ -251,7 +270,6 @@ function plotMeta(out, title, methods)
     gp:finish()
 end
 
-local iterations=20
 local methods = {}
 
 -- first-order methods
@@ -268,17 +286,26 @@ methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
 
 local cmd = arg[1] or nil
 if cmd == "data" then
-    local vel0 = 1.6
-    local pos0 = 5
+    -- local iterations = 20
+    -- local vel0 = 1.6
+    -- local pos0 = 5
+    -- local acc = gravity()
+    -- local exact = gravityExact(acc(vel0, pos0), vel0, pos0)
+
+    local iterations = 40
+    local vel0 = 0
+    local pos0 = 1
+    local acc = spring(1.5, 10)
+    local exact = springExact(acc(vel0, pos0), vel0, pos0)
 
     -- plot the exact solution
     initPlot("Exact")
-    plotExact(iterations, gravityExact(gravity(vel0, pos0), vel0, pos0))
+    plotExact(iterations, exact)
     nextPlot()
 
     for name, fn in pairs(methods) do
         initPlot(name)
-        plotNumeric(iterations, fn, gravity, pos0, vel0)
+        plotNumeric(iterations, fn, acc, pos0, vel0)
         nextPlot()
     end
 elseif cmd == "meta" then
