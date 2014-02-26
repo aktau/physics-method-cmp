@@ -7,7 +7,7 @@ function fprintf(f,s,...)
 end
 
 -- local versions of math functions
-local sin, cos = math.sin, math.cos
+local sin, cos, sqrt = math.sin, math.cos, math.sqrt
 
 --[[
 acceleration functions and exact solutions
@@ -35,13 +35,14 @@ function spring(stiffness, mass)
 end
 
 -- returns a function that only depends on absolute time
-function springExact(acc0, vel0, pos0)
+function springExact(stiffness, mass, acc0, vel0, pos0)
     local t0 = 0
     local denom = (sin(t0) ^ 2) + cos(t0)
     local A = (pos0 - vel0 * sin(t0)) / denom
     local B = (pos0 * sin(t0) + vel0 * cos(t0)) / denom
     -- print("initial conditions are A = ", A, "and B = ", B)
     return function(t)
+        t = sqrt(stiffness / mass) * t
         local sint, cost = sin(t), cos(t)
         return -A * sint + B * cost, A * cost + B * sint
     end
@@ -296,13 +297,13 @@ if cmd == "data" then
     -- local exact = gravityExact(acc(vel0, pos0), vel0, pos0)
 
     local timestep = function(iteration)
-        return 1/240
+        return 1/20
     end
-    local iterations = 40
-    local vel0 = 0
-    local pos0 = 1
-    local acc = spring(1.5, 10)
-    local exact = springExact(acc(vel0, pos0), vel0, pos0)
+    local iterations = 500
+    local stiffness, mass = 1.5, 10
+    local vel0, pos0 = 0, 1
+    local acc = spring(stiffness, mass)
+    local exact = springExact(stiffness, mass, acc(vel0, pos0), vel0, pos0)
 
     -- plot the exact solution
     initPlot("Exact")
