@@ -180,16 +180,16 @@ function ImprovedEulerVdrift(accfn, vel, pos, dt)
     return corrvel, corrpos
 end
 
-function plotNumeric(it, integrator, accfn, pos, vel)
+function plotNumeric(timestep, it, integrator, accfn, pos, vel)
     for i = 1,it do
         printf("%d %f\n", i, pos)
-        vel, pos = integrator(accfn, vel, pos, 1/60)
+        vel, pos = integrator(accfn, vel, pos, timestep(i))
     end
 end
 
-function plotExact(it, fn, accfn, pos0, vel0)
+function plotExact(timestep, it, fn, accfn, pos0, vel0)
     for i = 1,it do
-        local vel, pos = fn((i-1) * 1/60)
+        local vel, pos = fn((i-1) * timestep(i))
         printf("%d %f\n", i, pos)
     end
 end
@@ -286,12 +286,18 @@ methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
 
 local cmd = arg[1] or nil
 if cmd == "data" then
+    -- local timestep = function(iteration)
+    --     return 1/60
+    -- end
     -- local iterations = 20
     -- local vel0 = 1.6
     -- local pos0 = 5
     -- local acc = gravity()
     -- local exact = gravityExact(acc(vel0, pos0), vel0, pos0)
 
+    local timestep = function(iteration)
+        return 1/240
+    end
     local iterations = 40
     local vel0 = 0
     local pos0 = 1
@@ -300,12 +306,12 @@ if cmd == "data" then
 
     -- plot the exact solution
     initPlot("Exact")
-    plotExact(iterations, exact)
+    plotExact(timestep, iterations, exact)
     nextPlot()
 
     for name, fn in pairs(methods) do
         initPlot(name)
-        plotNumeric(iterations, fn, acc, pos0, vel0)
+        plotNumeric(timestep, iterations, fn, acc, pos0, vel0)
         nextPlot()
     end
 elseif cmd == "meta" then
