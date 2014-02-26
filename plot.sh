@@ -14,5 +14,5 @@ function plot() {
     cat <(echo "file = \"$input\";set terminal $terminal; set output '$output'") $meta | gnuplot
 }
 
-plot "$input" "$meta" "canvas" "comparison.html"
+plot "$input" "$meta" "canvas standalone mousing" "comparison.html"
 # plot "$input" "$meta" "png" "output.png"
