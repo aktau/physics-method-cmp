@@ -92,6 +92,28 @@ function ForwardEuler(accfn, vel, pos, dt)
     return vel + acc * dt, pos + vel * dt
 end
 
+-- some sort of midpoint method, as suggested by:
+-- http://stackoverflow.com/questions/6446051/nsv-euler-integration-confusion?rq=1
+-- http://gamedev.stackexchange.com/questions/25300/why-is-rk4-better-than-euler-integration
+-- tries to keep the middle between symplectic Eulers
+-- energy loss and forward Eulers energy addition
+function MidpointEuler(accfn, vel, pos, dt)
+    local acc = accfn(vel, pos)
+    local hvel = vel + acc * dt * 0.5
+    return vel + acc * dt, pos + hvel * dt
+end
+
+-- some sort of midpoint method, predictor-corrector style
+-- should perform similar to real improved Euler, improves
+-- the estimate of the velocity
+function ImprovedMidpointEuler(accfn, vel, pos, dt)
+    local acc = accfn(vel, pos)
+    local hvel = vel + acc * dt * 0.5
+    local hpos = vel + hvel * dt * 0.5
+    acc = accfn(hvel, hpos)
+    return vel + acc * dt, pos + hvel * dt
+end
+
 function SymplecticEuler(accfn, vel, pos, dt)
     local acc = accfn(vel, pos)
     local nvel = vel + acc * dt -- forward euler step
@@ -112,7 +134,7 @@ end
 -- AND position. Should be the same as Velocity Verlet
 -- according to my own checks. Vdrif says this is not
 -- the case, let's see...
-function ImprovedEuler(accfn, vel, pos, dt)
+function ImprovedEulerVdrift(accfn, vel, pos, dt)
     local acc1 = accfn(vel, pos)
     local predpos = pos + vel * dt
     local predvel = vel + acc1 * dt
@@ -179,8 +201,8 @@ function Gp:defineStyles()
     self:line("set style line 4 lc rgb '#990066' lw 2 pt 11 ps 1.5   # --- magenta")
     self:line("set style line 5 lc rgb '#FF6633' lw 2 pt 13 ps 1.5   # --- orange")
     self:line("set style line 6 lc rgb '#262626' lw 2 pt 15 ps 1.5   # --- almost black")
-    self:line("set style line 7 lc rgb '#599ad3' lw 2 pt 15 ps 1.5   # --- purple")
-    self:line("set style line 8 lc rgb '#f9a65a' lw 2 pt 15 ps 1.5   # --- ???")
+    self:line("set style line 7 lc rgb '#599ad3' lw 2 pt 17 ps 1.5   # --- purple")
+    self:line("set style line 8 lc rgb '#f9a65a' lw 2 pt 18 ps 1.5   # --- ???")
 end
 
 function Gp:plot(methods)
@@ -222,13 +244,17 @@ end
 local iterations=20
 local methods = {}
 
-methods["VelocityVerletVdrift"] = VelocityVerletVdrift
-methods["TimeCorrectedVerlet"] = TimeCorrectedVerlet
+-- first-order methods
 methods["ForwardEuler"] = ForwardEuler
 methods["SymplecticEuler"] = SymplecticEuler
+methods["MidpointEuler"] = MidpointEuler
+
+-- second-order methods
 methods["RegularVerlet"] = Verlet
+methods["TimeCorrectedVerlet"] = TimeCorrectedVerlet
+methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["NaiveImprovedEuler"] = NaiveImprovedEuler
-methods["ImprovedEuler"] = ImprovedEuler
+methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
 
 local cmd = arg[1] or nil
 if cmd == "data" then
@@ -243,6 +269,7 @@ if cmd == "data" then
         nextPlot()
     end
 elseif cmd == "meta" then
+    methods["Exact"] = ConstantAccelerationExact
     plotMeta(io.stdout, "numerical integration accuracy", methods)
 else
     print("command ", cmd, " not recognized")
