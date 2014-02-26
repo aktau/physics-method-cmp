@@ -6,16 +6,23 @@ function fprintf(f,s,...)
     return f:write(s:format(...))
 end
 
--- the acceleration function, best make this as complex as possible to
--- stress the integrators
-function acceleration(vel, pos)
+--[[
+acceleration functions and exact solutions
+--]]
+
+function gravity(vel, pos)
     return -9.81
 end
 
-function ConstantAccelerationExact(accfn, vel0, pos0, t)
-    local acc0 = accfn()
-    return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
+function gravityExact(acc0, vel0, pos0)
+    return function(t)
+        return vel0 + acc0 * t, pos0 + vel0 * t + acc0 * t * t * 0.5
+    end
 end
+
+--[[
+Numerical integrators
+--]]
 
 do
     local old_pos = 0
@@ -153,14 +160,17 @@ function plotNumeric(it, integrator, accfn, pos, vel)
     end
 end
 
+-- function plotExact(it, fn, accfn, pos0, vel0)
+--     local vel = vel0
+--     local pos = pos0
 function plotExact(it, fn, accfn, pos0, vel0)
-    local vel = vel0
-    local pos = pos0
-    local t = 0
+    -- local t = 0
+    -- local vel = vel0
     for i = 1,it do
+        local vel, pos = fn((i-1) * 1/60)
+        -- fprintf(io.stderr, "GRAVITY RETURN vel: %f, pos: %f at time %f", vel, pos, (i-1) * 1/60)
         printf("%d %f\n", i, pos)
-        t = t + 1/60
-        vel, pos = fn(accfn, vel0, pos0, t)
+        -- t = t + 1/60
     end
 end
 
@@ -258,18 +268,21 @@ methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
 
 local cmd = arg[1] or nil
 if cmd == "data" then
+    local vel0 = 1.6
+    local pos0 = 5
+
     -- plot the exact solution
     initPlot("Exact")
-    plotExact(iterations, ConstantAccelerationExact, acceleration, 5, 1.6)
+    plotExact(iterations, gravityExact(gravity(vel0, pos0), vel0, pos0))
     nextPlot()
 
     for name, fn in pairs(methods) do
         initPlot(name)
-        plotNumeric(iterations, fn, acceleration, 5, 1.6)
+        plotNumeric(iterations, fn, gravity, pos0, vel0)
         nextPlot()
     end
 elseif cmd == "meta" then
-    methods["Exact"] = ConstantAccelerationExact
+    methods["Exact"] = gravityExact
     plotMeta(io.stdout, "numerical integration accuracy", methods)
 else
     print("command ", cmd, " not recognized")
