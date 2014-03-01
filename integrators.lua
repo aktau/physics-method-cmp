@@ -7,7 +7,7 @@ function fprintf(f,s,...)
 end
 
 -- local versions of math functions
-local sin, cos, sqrt = math.sin, math.cos, math.sqrt
+local sin, cos, sqrt, exp = math.sin, math.cos, math.sqrt, math.exp
 
 --[[
 acceleration functions and exact solutions
@@ -45,6 +45,33 @@ function springExact(stiffness, mass, acc0, vel0, pos0)
         t = sqrt(stiffness / mass) * t
         local sint, cost = sin(t), cos(t)
         return -A * sint + B * cost, A * cost + B * sint
+    end
+end
+
+-- returns a function that only depends on position and velocity
+function dampedSpring(damping, stiffness, mass)
+    return function(vel, pos)
+        return -(damping * vel + stiffness * pos) / mass
+    end
+end
+
+-- returns a function that only depends on absolute time
+-- some constants that you would normally be able to choose are
+-- fixed, because the exact solution is a mess...
+function dampedSpringExact(damping, stiffness, mass, acc0, vel0, pos0)
+    if vel0 ~= 0 or pos0 ~= 1 or mass ~= 1 then
+        fprintf(io.stderr, "parameters are wrong: (vel0 = %f) != 0, (pos0 = %f) != 1, (mass = %f) != 1", vel0, pos0, mass)
+        os.exit(1)
+    end
+
+    local c, k = damping, stiffness
+
+    return function(t)
+        -- t = sqrt(stiffness / mass) * t
+        -- local sint, cost = sin(t), cos(t)
+        local npos = (c + (c^2 - 4*k)^(1/2))/(2*exp(t*(c/2 - (c^2 - 4*k)^(1/2)/2))*(c^2 - 4*k)^(1/2)) -
+            (c - (c^2 - 4*k)^(1/2))/(2*exp(t*(c/2 + (c^2 - 4*k)^(1/2)/2))*(c^2 - 4*k)^(1/2))
+        return 0, npos
     end
 end
 
@@ -285,6 +312,7 @@ methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["NaiveImprovedEuler"] = NaiveImprovedEuler
 methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
 
+local compareToExact = false
 local cmd = arg[1] or nil
 if cmd == "data" then
     -- local timestep = function(iteration)
@@ -296,19 +324,30 @@ if cmd == "data" then
     -- local acc = gravity()
     -- local exact = gravityExact(acc(vel0, pos0), vel0, pos0)
 
+    -- local timestep = function(iteration)
+    --     return 1/20
+    -- end
+    -- local iterations = 500
+    -- local stiffness, mass = 1.5, 10
+    -- local vel0, pos0 = 0, 1
+    -- local acc = spring(stiffness, mass)
+    -- local exact = springExact(stiffness, mass, acc(vel0, pos0), vel0, pos0)
+
     local timestep = function(iteration)
-        return 1/20
+        return 1/30
     end
     local iterations = 500
-    local stiffness, mass = 1.5, 10
+    local drag, stiffness, mass = 0.5, 1.5, 1
     local vel0, pos0 = 0, 1
-    local acc = spring(stiffness, mass)
-    local exact = springExact(stiffness, mass, acc(vel0, pos0), vel0, pos0)
+    local acc = dampedSpring(drag, stiffness, mass)
+    local exact = dampedSpringExact(drag, stiffness, mass, acc(vel0, pos0), vel0, pos0)
 
-    -- plot the exact solution
-    initPlot("Exact")
-    plotExact(timestep, iterations, exact)
-    nextPlot()
+    if compareToExact then
+        -- plot the exact solution
+       initPlot("Exact")
+       plotExact(timestep, iterations, exact)
+       nextPlot()
+    end
 
     for name, fn in pairs(methods) do
         initPlot(name)
@@ -316,7 +355,9 @@ if cmd == "data" then
         nextPlot()
     end
 elseif cmd == "meta" then
-    methods["Exact"] = gravityExact
+    if compareToExact then
+        methods["Exact"] = gravityExact
+    end
     plotMeta(io.stdout, "numerical integration accuracy", methods)
 else
     print("command ", cmd, " not recognized")
