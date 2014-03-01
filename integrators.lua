@@ -149,6 +149,31 @@ do
     end
 end
 
+-- A fourth-order method
+function RungeKutta4(accfn, vel, pos, dt)
+    local p1 = pos
+    local v1 = vel
+    local a1 = accfn(v1, p1)
+
+    local p2 = pos + v1 * dt/2
+    local v2 = vel + a1 * dt/2
+    local a2 = accfn(v2, p2)
+
+    local p3 = pos + v2 * dt/2
+    local v3 = vel + a2 * dt/2
+    local a3 = accfn(v3, p3)
+
+    local p4 = pos + v3 * dt/2
+    local v4 = vel + a3 * dt/2
+    local a4 = accfn(v4, p4)
+
+    local p = pos + (dt/6.0)*(v1 + 2*v2 + 2*v3 + v4)
+    local v = vel + (dt/6.0)*(a1 + 2*a2 + 2*a3 + a4)
+
+    return v, p
+end
+
+
 function ForwardEuler(accfn, vel, pos, dt)
     local acc = accfn(vel, pos)
     return vel + acc * dt, pos + vel * dt
@@ -159,6 +184,17 @@ end
 -- http://gamedev.stackexchange.com/questions/25300/why-is-rk4-better-than-euler-integration
 -- tries to keep the middle between symplectic Eulers
 -- energy loss and forward Eulers energy addition
+--
+-- on SO it is mentioned that the midpoint method makes this antire method
+-- of second-order (the error is O(h^3)), we should definitely verify
+--
+-- at the very least for second degree equations of position (constant
+-- acceleration) it is completely accurate, this equation effectively
+-- gives the exact solution.
+--
+-- some people say that this is actually equivalent to Velocity Verlet:
+-- http://lolengine.net/blog/2011/12/14/understanding-motion-in-games but I
+-- have serious trouble believing that and will investigate
 function MidpointEuler(accfn, vel, pos, dt)
     local acc = accfn(vel, pos)
     local hvel = vel + acc * dt * 0.5
@@ -252,14 +288,38 @@ end
 
 function Gp:defineStyles()
     self:line("\n# define the styles")
-    self:line("set style line 1 lc rgb '#0060ad' lw 2 pt 5 ps 1.5   # --- blue")
-    self:line("set style line 2 lc rgb '#dd181f' lw 2 pt 7 ps 1.5   # --- red")
-    self:line("set style line 3 lc rgb '#339900' lw 2 pt 9 ps 1.5   # --- green")
-    self:line("set style line 4 lc rgb '#990066' lw 2 pt 11 ps 1.5   # --- magenta")
-    self:line("set style line 5 lc rgb '#FF6633' lw 2 pt 13 ps 1.5   # --- orange")
-    self:line("set style line 6 lc rgb '#262626' lw 2 pt 15 ps 1.5   # --- almost black")
-    self:line("set style line 7 lc rgb '#599ad3' lw 2 pt 17 ps 1.5   # --- purple")
-    self:line("set style line 8 lc rgb '#f9a65a' lw 2 pt 18 ps 1.5   # --- ???")
+    self:addStyle(1, 5, "#0060ad", "blue")
+    self:addStyle(2, 7, "#dd181f", "red")
+    self:addStyle(3, 9, "#339900", "green")
+    self:addStyle(4, 11, "#990066", "magenta")
+    self:addStyle(6, 13, "#FF6633", "orange")
+    self:addStyle(5, 15, "#262626", "almost black")
+    self:addStyle(7, 17, "#599ad3", "purple")
+    self:addStyle(8, 18, "#f9a65a")
+
+    -- extra colors from http://flatuicolors.com/
+    self:addStyle(9, 19, "#1abc9c", "turquoise")
+    self:addStyle(10, 20, "#2c3e50", "midnight blue")
+    self:addStyle(11, 21, "#e74c3c", "alizarin")
+    self:addStyle(12, 22, "#2ecc71", "emerald")
+    self:addStyle(13, 23, "#9b59b6", "amethyst")
+    self:addStyle(14, 24, "#d35400", "pumpkin")
+
+    -- self:line("set style line 1 lc rgb '#0060ad' lw 2 pt 5 ps 1.5   # --- blue")
+    -- self:line("set style line 2 lc rgb '#dd181f' lw 2 pt 7 ps 1.5   # --- red")
+    -- self:line("set style line 3 lc rgb '#339900' lw 2 pt 9 ps 1.5   # --- green")
+    -- self:line("set style line 4 lc rgb '#990066' lw 2 pt 11 ps 1.5   # --- magenta")
+    -- self:line("set style line 5 lc rgb '#FF6633' lw 2 pt 13 ps 1.5   # --- orange")
+    -- self:line("set style line 6 lc rgb '#262626' lw 2 pt 15 ps 1.5   # --- almost black")
+    -- self:line("set style line 7 lc rgb '#599ad3' lw 2 pt 17 ps 1.5   # --- purple")
+    -- self:line("set style line 8 lc rgb '#f9a65a' lw 2 pt 18 ps 1.5   # --- ???")
+end
+
+function Gp:addStyle(id, style, color, name)
+    name = name or "???"
+
+    local tmpl = "set style line %d lc rgb '%s' lw 2 pt %d ps 1.5   # --- %s"
+    self:line(tmpl:format(id, color, style, name))
 end
 
 function Gp:plot(methods)
@@ -311,6 +371,9 @@ methods["TimeCorrectedVerlet"] = TimeCorrectedVerlet
 methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["NaiveImprovedEuler"] = NaiveImprovedEuler
 methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
+
+-- fourth-order methods
+methods["RungeKutta4"] = RungeKutta4
 
 local compareToExact = false
 local cmd = arg[1] or nil
