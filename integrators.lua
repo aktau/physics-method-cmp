@@ -230,7 +230,7 @@ end
 
 -- use a second-order method for approximating velocity
 -- AND position. Should be the same as Velocity Verlet
--- according to my own checks. Vdrif says this is not
+-- according to my own checks. Vdrift says this is not
 -- the case, let's see...
 function ImprovedEulerVdrift(accfn, vel, pos, dt)
     local acc1 = accfn(vel, pos)
@@ -242,6 +242,26 @@ function ImprovedEulerVdrift(accfn, vel, pos, dt)
     local corrvel = vel + acc2 * dt
 
     return corrvel, corrpos
+end
+
+-- heun according to
+-- http://doswa.com/2009/01/02/fourth-order-runge-kutta-numerical-integration.html
+-- is actually different than Vdrift's improved Euler because the velocity
+-- is calculated by adding the avg(a1,a2) instead of just a2. I think this
+-- should be more accurate. Heun is the true RK2
+function Heun(accfn, vel, pos, dt)
+    local p1 = pos
+    local v1 = vel
+    local a1 = accfn(v1, p1)
+
+    local p2 = pos + v1 * dt
+    local v2 = vel + a1 * dt
+    local a2 = accfn(v2, p2)
+
+    local p = pos + (v1 + v2) / 2 * dt
+    local v = vel + (a1 + a2) / 2 * dt
+
+    return v, p
 end
 
 function plotNumeric(timestep, it, integrator, accfn, pos, vel)
@@ -371,6 +391,7 @@ methods["TimeCorrectedVerlet"] = TimeCorrectedVerlet
 methods["VelocityVerletVdrift"] = VelocityVerletVdrift
 methods["NaiveImprovedEuler"] = NaiveImprovedEuler
 methods["ImprovedEulerVdrift"] = ImprovedEulerVdrift
+methods["Heun"] = Heun
 
 -- fourth-order methods
 methods["RungeKutta4"] = RungeKutta4
