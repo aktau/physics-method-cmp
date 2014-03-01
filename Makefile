@@ -26,9 +26,11 @@ comparison.html: $(SOURCE_DATA) $(SOURCE_META)
 open: comparison.html
 	open "$<"
 
+rebuild: clean comparison.html open
+
 clean:
 	rm -f $(SOURCE_DATA) || true
 	rm -f $(SOURCE_META) || true
 	rm -f comparison.html || true
 
-.PHONY: clean open
+.PHONY: clean open rebuild
