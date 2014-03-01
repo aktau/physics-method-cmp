@@ -58,6 +58,9 @@ end
 -- returns a function that only depends on absolute time
 -- some constants that you would normally be able to choose are
 -- fixed, because the exact solution is a mess...
+-- based on:
+-- * Elementary Solution of the Damped Oscillator (2007) - http://www.haverford.edu/physics-astro/dcross/academics/misc/dho.pdf
+-- * Wikipedia - http://en.wikipedia.org/wiki/Examples_of_differential_equations
 function dampedSpringExact(damping, stiffness, mass, acc0, vel0, pos0)
     if vel0 ~= 0 or pos0 ~= 1 or mass ~= 1 then
         fprintf(io.stderr, "parameters are wrong: (vel0 = %f) != 0, (pos0 = %f) != 1, (mass = %f) != 1", vel0, pos0, mass)
